@@ -138,7 +138,7 @@ public static class Program
         {
             foreach (var app in NSWorkspace.SharedWorkspace.RunningApplications)
             {
-                if (app.ExecutableUrl.ToString().Contains("IntegrationTestApp"))
+                if (app.ExecutableUrl.ToString().EndsWith("IntegrationTestApp"))
                 {
                     using var appElement = AXUIElement.FromPid(app.ProcessIdentifier);
                     Dump(appElement, 30);
