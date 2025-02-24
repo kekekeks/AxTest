@@ -83,6 +83,18 @@ public static class Program
         
         if (args.Length == 1 && args[0] == "citest")
         {
+            Console.WriteLine("Installed apps:");
+            foreach (var app in Directory.GetDirectories("/Applications"))
+            {
+                Console.WriteLine(app);
+            }
+
+            Console.WriteLine("Starting some apps");
+            Process.Start("open", "/Applications/Safari.app");
+            Process.Start("open", "/Applications/Finder.app");
+            
+            Console.WriteLine("Waiting");
+            Thread.Sleep(5000);
             
             foreach (var app in NSWorkspace.SharedWorkspace.RunningApplications)
             {
