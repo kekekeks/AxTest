@@ -24,6 +24,9 @@ public class AxApi
     public extern static AXError AXUIElementCopyAttributeValue(IntPtr element, IntPtr cfsAttribute, out IntPtr value);
     
     [DllImport(AS)]
+    public extern static AXError AXUIElementIsAttributeSettable(IntPtr element, IntPtr cfsAttribute, out int settable);
+    
+    [DllImport(AS)]
     public extern static int AXUIElementGetTypeID();
 
     

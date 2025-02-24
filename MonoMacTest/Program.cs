@@ -3,69 +3,91 @@ using System.Diagnostics;
 using AutomationTest;
 using MonoMac.AppKit;
 using MonoMac.Foundation;
+using Newtonsoft.Json;
 
 public static class Program
 {
-
-    static void Pad(int depth) => Console.Write(new string(' ', depth * 2));
-    static void Dump(AXUIElement element, int depth, int maxDepth)
+    static void Dump(JsonWriter wr, AXUIElement element, int depth, int maxDepth)
     {
-
-        foreach(var attr in element.GetAttributeNames())
+        var names = element.GetAttributeNames();
+        if (depth > 3)
+        {
+            if (element.GetAttribute("AXRole") == "AXWindow")
+            {
+                wr.WriteValue("RECUSRSION DETECTED");
+                return;
+            }
+        }
+        wr.WriteStartObject();
+        var actions = element.GetActions();
+        if (actions.Count > 0)
+        {
+            wr.WritePropertyName("_actions");
+            wr.WriteStartArray();
+            foreach(var a in actions)
+                wr.WriteValue(a);
+            wr.WriteEndArray();
+        }
+        
+        foreach(var attr in names)
         {
             if (AXUIElement.RecursiveAttributes.Contains(attr))
                 continue;
             var value = element.GetAttribute(attr);
             if(value == null)
                 continue;
-            Pad(depth);
-            Console.Write(attr);
-            Console.Write(": ");
+
+            wr.WritePropertyName(attr);
             using var _ = value as IDisposable;
             if (value is AXUIElement child)
             {
                 if (depth == maxDepth)
-                    Console.WriteLine("AXUIElement");
+                    wr.WriteValue("AXUIElement");
                 else
                 {
-                    Console.WriteLine();
-                    Dump(child, depth + 1, maxDepth);
+                    Dump(wr, child, depth + 1, maxDepth);
                 }
             }
             else if (value is AXElementList list)
             {
                 if (depth == maxDepth)
-                    Console.WriteLine($"AXUIElement[{list.Count}]");
+                    wr.WriteValue($"AXUIElement[{list.Count}]");
                 else if (list.Count == 0)
-                    Console.WriteLine("[]");
+                    wr.WriteValue("[]");
                 else
                 {
-                    Console.WriteLine();
                     if(list.Count == 1)
-                        Dump(list[0], depth + 1, maxDepth);
+                        Dump(wr, list[0], depth + 1, maxDepth);
                     else
                     {
-                        
-                        Pad(depth);
-                        Console.WriteLine("[");
+                        wr.WriteStartArray();
                         foreach (var ch in list)
                         {
-                            Dump(ch, depth + 1, maxDepth);
-                            Pad(depth);
-                            Console.WriteLine(",");
+                            Dump(wr, ch, depth + 1, maxDepth);
                         }
-                        Pad(depth);
-                        Console.WriteLine("]");
+                        wr.WriteEndArray();
                     }
                 }
             }
             else
             {
-                Console.WriteLine(value);
+                wr.WriteValue(value.ToString());
             }
         }
+        wr.WriteEndObject();
     }
-    
+
+    static void Dump(AXUIElement element, int maxDepth)
+    {
+        var jw = new JsonTextWriter(Console.Out)
+        {
+            Formatting = Formatting.Indented
+        };
+        Dump(jw, element, 0, maxDepth);
+        jw.Flush();
+    }
+
+
     public static void Main(string[] args)
     {
         NSApplication.Init();
@@ -74,13 +96,14 @@ public static class Program
             [NSObject.FromObject("AXTrustedCheckOptionPrompt")]);
 
         var trusted = AxApi.AXIsProcessTrustedWithOptions(options.Handle);
-        Console.WriteLine("IsTrusted:" + trusted);
-        if(!trusted)
-            return;
 
-        
-        
-        
+        if (!trusted)
+        {
+            Console.WriteLine("Not Trusted:");
+        }
+
+
+
         if (args.Length == 1 && args[0] == "citest")
         {
             Console.WriteLine("Installed apps:");
@@ -108,13 +131,24 @@ public static class Program
                 Console.WriteLine("Dumping " + app.LocalizedName);
                 Console.WriteLine("=========");
                 using var appElement = AXUIElement.FromPid(app.ProcessIdentifier);
-                Dump(appElement, 0, 3);
+                Dump(appElement, 3);
+            }
+        }
+        if(args.Length == 1 && args[0] == "testapp")
+        {
+            foreach (var app in NSWorkspace.SharedWorkspace.RunningApplications)
+            {
+                if (app.ExecutableUrl.ToString().Contains("IntegrationTestApp"))
+                {
+                    using var appElement = AXUIElement.FromPid(app.ProcessIdentifier);
+                    Dump(appElement, 30);
+                }
             }
         }
         else
         {
             using var root = AXUIElement.FromPid(36129);
-            Dump(root, 0, 3);
+            Dump(root, 3);
         }
     }
 }

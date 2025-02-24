@@ -14,7 +14,11 @@ public class AXUIElement(IntPtr handle) : IDisposable
 	{
 		"AXTopLevelUIElement",
 		"AXParent",
-		"AXWindow"
+		"AXWindow",
+		"AXServesAsTitleForUIElements",
+		"AXTitleUIElement",
+		"AXMenuItemPrimaryUIElement",
+		"AXChildrenInNavigationOrder" // ?
 	};
 	private readonly IntPtr _handle = handle;
 
@@ -93,6 +97,13 @@ public class AXUIElement(IntPtr handle) : IDisposable
 	    
 	    //return null;
 	    return obj.Description;
+    }
+
+    public bool IsAttributeSettable(string name)
+    {
+	    using var s = new NSString(name);
+	    AxApi.AXUIElementIsAttributeSettable(_handle, s.Handle, out var settable);
+	    return settable != 0;
     }
     
 }

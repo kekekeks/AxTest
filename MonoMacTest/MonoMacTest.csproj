@@ -9,5 +9,6 @@
     </PropertyGroup>
 <ItemGroup>
     <PackageReference Include="MonoMac.Core" Version="0.0.23728" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 </ItemGroup>
 </Project>
