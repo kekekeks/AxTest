@@ -88,7 +88,10 @@ public static class Program
             {
                 var url = app.ExecutableUrl.ToString();
                 if (!url.StartsWith("file:///Applications"))
+                {
+                    Console.WriteLine("Skipping " + app.LocalizedName + " at " + url);
                     continue;
+                }
                 Console.WriteLine("=========");
                 Console.WriteLine("Dumping " + app.LocalizedName);
                 Console.WriteLine("=========");
