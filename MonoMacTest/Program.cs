@@ -91,7 +91,7 @@ public static class Program
 
             Console.WriteLine("Starting some apps");
             Process.Start("open", "/Applications/Safari.app");
-            Process.Start("open", "/Applications/Finder.app");
+            Process.Start("open", "\"/Applications/Google Chrome.app\"");
             
             Console.WriteLine("Waiting");
             Thread.Sleep(5000);
@@ -99,7 +99,7 @@ public static class Program
             foreach (var app in NSWorkspace.SharedWorkspace.RunningApplications)
             {
                 var url = app.ExecutableUrl.ToString();
-                if (!url.StartsWith("file:///Applications"))
+                if (!url.StartsWith("file:///Applications") && !url.StartsWith("file:///System/Volumes/Preboot/"))
                 {
                     Console.WriteLine("Skipping " + app.LocalizedName + " at " + url);
                     continue;
