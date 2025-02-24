@@ -10,9 +10,22 @@ public class AxApi
     
     [DllImport(AS)]
     public extern static IntPtr AXUIElementCreateSystemWide();
+
+    [DllImport(AS)]
+    public extern static IntPtr AXUIElementCreateApplication(int pid);
     
     [DllImport(AS)]
     public extern static AXError AXUIElementCopyAttributeNames(IntPtr element, out IntPtr names);
+    
+    [DllImport(AS)]
+    public extern static AXError AXUIElementCopyActionNames(IntPtr element, out IntPtr names);
+
+    [DllImport(AS)]
+    public extern static AXError AXUIElementCopyAttributeValue(IntPtr element, IntPtr cfsAttribute, out IntPtr value);
+    
+    [DllImport(AS)]
+    public extern static int AXUIElementGetTypeID();
+
     
     
     [DllImport("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")]

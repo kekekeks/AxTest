@@ -1,10 +1,21 @@
+using System.Collections.ObjectModel;
+using MonoMac.AppKit;
+using MonoMac.CoreFoundation;
 using MonoMac.Foundation;
+using MonoMac.ObjCRuntime;
 
 namespace AutomationTest;
 
 
 public class AXUIElement(IntPtr handle) : IDisposable
 {
+
+	public static readonly IReadOnlySet<string> RecursiveAttributes = new HashSet<string>()
+	{
+		"AXTopLevelUIElement",
+		"AXParent",
+		"AXWindow"
+	};
 	private readonly IntPtr _handle = handle;
 
 	public void Dispose()
@@ -16,21 +27,91 @@ public class AXUIElement(IntPtr handle) : IDisposable
 	{
 		return new AXUIElement(AxApi.AXUIElementCreateSystemWide());
 	}
-	
+
+	public static AXUIElement FromPid(int pid)
+	{
+		return new AXUIElement(AxApi.AXUIElementCreateApplication(pid));
+	}
+
+	static List<string> DumpStringNSArray(NSArray array)
+	{
+		var rv = new List<string>();
+		for (var c = 0ul; c < array.Count; c++)
+		{
+			rv.Add(NSString.FromHandle(array.ValueAt(c)));
+		}
+
+		return rv;
+	}
     public List<string> GetAttributeNames()
     {
 	    var rv = new List<string>();
 	    AxApi.AXUIElementCopyAttributeNames(_handle, out var arrayRef);
-
-	    
 	    using var array = new NSArray(arrayRef);
-	    for (var c = 0ul; c < array.Count; c++)
-	    {
-		    rv.Add(NSString.FromHandle(array.ValueAt(c)));
-	    }
-
-	    return rv;
+	    return DumpStringNSArray(array);
     }
+    
+    public List<string> GetActions()
+    {
+	    var rv = new List<string>();
+	    AxApi.AXUIElementCopyActionNames(_handle, out var arrayRef);
+	    using var array = new NSArray(arrayRef);
+	    return DumpStringNSArray(array);
+    }
+
+    public object? GetAttribute(string name)
+    {
+	    using var cfName = new NSString(name);
+	    var err = AxApi.AXUIElementCopyAttributeValue(_handle, cfName.Handle, out var ptr);
+
+	    if (err != AXError.kAXErrorSuccess)
+		    return null;
+	    
+	    if (ptr == IntPtr.Zero)
+		    return null;
+	    
+	    var typeId = CFType.GetTypeID(ptr);
+	    if (typeId == AxApi.AXUIElementGetTypeID())
+		    return new AXUIElement(ptr);
+
+	    using var obj = Runtime.GetNSObject(ptr);
+	    if (obj is NSString s)
+		    return s.ToString();
+	    if (obj is NSNumber num)
+		    return num.IntValue;
+	    if (obj is NSArray arr)
+	    {
+		    var list = new List<AXUIElement>();
+		    for (var c = 0ul; c < arr.Count; c++)
+		    {
+			    var elem = arr.ValueAt(c);
+			    list.Add(new AXUIElement(elem));
+		    }
+
+		    return new AXElementList(list);
+	    }
+	    
+	    //return null;
+	    return obj.Description;
+    }
+    
+}
+
+public class AXElementList :ReadOnlyCollection<AXUIElement>, IDisposable
+{
+	private readonly IList<AXUIElement> _list;
+
+	public AXElementList(IList<AXUIElement> list) : base(list)
+	{
+		_list = list;
+	}
+
+	public void Dispose()
+	{
+		foreach (var e in this)
+			e.Dispose();
+		_list.Clear();
+	}
 }
 
 
