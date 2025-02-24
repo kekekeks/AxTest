@@ -1,0 +1,14 @@
+
+
+
+Mouse and keyboard simulation
+ https://stackoverflow.com/a/43320345
+
+and it should still work from at least cmdline https://developer.apple.com/forums/thread/724603
+probably from rider too since it's not sandboxed
+
+https://developer.apple.com/forums/thread/724603?answerId=744501022#744501022
+
+2 apis with exactly zero docs CGPreflightPostEventAccess / CGRequestPostEventAccess
+
+https://stackoverflow.com/a/33703778
